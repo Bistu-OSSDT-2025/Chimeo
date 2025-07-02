@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>导入ICS文件</title>
+    <style>
+        body { font-family: Arial, max-width: 500px, margin: 0 auto, padding: 20px }
+        .header { display: flex; justify-content: space-between; align-items: center }
+        .import-form { margin-top: 20px }
+        .back-btn { margin-top: 20px }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>导入日历文件</h2>
+        <span class="close-btn" onclick="location.href='/'">×</span>
+    </div>
+    
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="alert" style="color:red; margin:10px 0">
+                {{ messages[0] }}
+            </div>
+        {% endif %}
+    {% endwith %}
+    
+    <form class="import-form" method="POST" enctype="multipart/form-data">
+        <input type="file" name="ics_file" accept=".ics" required>
+        <button type="submit" style="margin-top:10px">导入</button>
+    </form>
+    
+    <div class="back-btn">
+        <button onclick="location.href='/'">返回</button>
+    </div>
+</body>
+</html>

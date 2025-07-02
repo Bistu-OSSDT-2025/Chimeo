@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>我的日程</title>
+    <style>
+        body { font-family: Arial, max-width: 800px, margin: 0 auto, padding: 20px }
+        .header { display: flex; justify-content: space-between; align-items: center }
+        .create-btn {
+            font-size: 24px; width: 40px; height: 40px;
+            border-radius: 50%; background: #4CAF50;
+            color: white; border: none; cursor: pointer
+        }
+        .event {
+            padding: 10px; margin-bottom: 10px;
+            border-radius: 5px; border-left: 5px solid
+        }
+        .work { border-color: #FF5722; background: #FFE0B2 }
+        .study { border-color: #2196F3; background: #BBDEFB }
+        .life { border-color: #4CAF50; background: #C8E6C9 }
+        .other { border-color: #9C27B0; background: #E1BEE7 }
+        .event-actions { margin-top: 10px; display: flex; gap: 5px }
+        .event-actions button {
+            padding: 3px 8px; font-size: 0.8em;
+            background: #f0f0f0; border: 1px solid #ddd
+        }
+        .action-buttons {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .action-buttons a {
+            padding: 8px 15px;
+            background: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+        .action-buttons a:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>我的日程</h1>
+        <button class="create-btn" onclick="window.location.href='{{ url_for('create_event') }}'">+</button>
+    </div>
+    
+    <div class="event-list">
+        {% for event in events %}
+        <div class="event {{ event['category'] or 'other' }}">
+            <div class="event-title">{{ event['title'] }}</div>
+            <div class="event-time">
+                {{ event['start_time'] }}
+                {% if event['end_time'] %} - {{ event['end_time'] }}{% endif %}
+                {% if event['is_all_day'] %} (全天){% endif %}
+            </div>
+            {% if event['notes'] %}<div>{{ event['notes'] }}</div>{% endif %}
+            
+            <div class="event-actions">
+                <button onclick="window.location.href='{{ url_for('edit_event', event_id=event['id']) }}'">编辑</button>
+                <button onclick="if(confirm('确定删除？')){ fetch('{{ url_for('delete_event', event_id=event['id']) }}', {method:'POST'}).then(()=>window.location.reload()) }">
+                    删除
+                </button>
+            </div>
+        </div>
+        {% else %}
+        <p>暂无日程，点击右上角 + 创建</p>
+        {% endfor %}
+    </div>
+
+    <!-- 统一的操作按钮区域 -->
+    <div class="action-buttons">
+        <a href="{{ url_for('export_ics') }}">导出ICS日历</a>
+        <a href="/logout">退出登录</a>
+    </div>
+</body>
+</html>

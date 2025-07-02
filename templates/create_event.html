@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>创建日程</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .close-btn {
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .option-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 10px;
+            background-color: #f0f0f0;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+        }
+        .option-btn:hover {
+            background-color: #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>创建日程</h2>
+        <span class="close-btn" onclick="location.href='/'">×</span>
+    </div>
+    
+    <button class="option-btn" id="textInputBtn">文字输入</button>
+
+<script>
+document.getElementById('textInputBtn').addEventListener('click', function() {
+    window.location.href = "{{ url_for('text_input') }}";
+});
+</script>
+    <button class="option-btn" disabled>语音输入(开发中)</button>
+    <button class="option-btn" onclick="location.href='{{ url_for('import_ics') }}'">
+    导入日历文件ICS
+</button>
+</body>
+</html>

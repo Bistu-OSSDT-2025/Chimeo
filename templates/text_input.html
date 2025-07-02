@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{% if event %}编辑日程{% else %}创建日程{% endif %}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .close-btn {
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"],
+        input[type="datetime-local"],
+        textarea {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        textarea {
+            height: 100px;
+        }
+        .time-range {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .time-range input {
+            flex: 1;
+        }
+        .category-options {
+            display: flex;
+            gap: 10px;
+            margin-top: 5px;
+        }
+        .category-btn {
+            padding: 5px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .category-btn.selected {
+            background-color: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+        }
+        .work {
+            background-color: #FFE0B2;
+        }
+        .study {
+            background-color: #BBDEFB;
+        }
+        .life {
+            background-color: #C8E6C9;
+        }
+        .other {
+            background-color: #E1BEE7;
+        }
+        .footer {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+        .save-btn {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .save-btn:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>{% if event %}编辑日程{% else %}创建日程{% endif %}</h2>
+        <span class="close-btn" onclick="location.href='{% if event %}/index{% else %}/create_event{% endif %}'">×</span>
+    </div>
+    
+    <!-- 修改点1：动态设置form的action -->
+    <form action="{% if event %}{{ url_for('update_event', event_id=event['id']) }}{% else %}{{ url_for('create_event') }}{% endif %}" method="post">
+        <div class="form-group">
+            <label for="title">事件标题</label>
+            <input type="text" id="title" name="title" value="{{ event['title'] if event else '' }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label>时间范围</label>
+            <div class="time-range">
+                <input type="datetime-local" id="start_time" name="start_time" 
+                       value="{{ event['start_time'] if event else localISOTime }}" required>
+                <span>至</span>
+                <input type="datetime-local" id="end_time" name="end_time" 
+                       value="{{ event['end_time'] if event and event['end_time'] else '' }}"
+                       {% if event and event['is_all_day'] %}disabled{% endif %}>
+            </div>
+            <div style="margin-top: 5px;">
+                <input type="checkbox" id="is_all_day" name="is_all_day" 
+                       {% if event and event['is_all_day'] %}checked{% endif %}>
+                <label for="is_all_day" style="display: inline; font-weight: normal;">全天事件</label>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="repeat_rule">重复规则</label>
+            <select id="repeat_rule" name="repeat_rule" style="width: 100%; padding: 8px;">
+                <option value="">一次性</option>
+                <option value="daily" {% if event and event['repeat_rule'] == 'daily' %}selected{% endif %}>每天</option>
+                <option value="weekly" {% if event and event['repeat_rule'] == 'weekly' %}selected{% endif %}>每周</option>
+                <option value="monthly" {% if event and event['repeat_rule'] == 'monthly' %}selected{% endif %}>每月</option>
+                <option value="yearly" {% if event and event['repeat_rule'] == 'yearly' %}selected{% endif %}>每年</option>
+                <option value="custom" {% if event and event['repeat_rule'] == 'custom' %}selected{% endif %}>自定义</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label>分类标签</label>
+            <div class="category-options">
+                <div class="category-btn work" data-value="work">工作</div>
+                <div class="category-btn study" data-value="study">学习</div>
+                <div class="category-btn life" data-value="life">生活</div>
+                <div class="category-btn other" data-value="other">其他</div>
+            </div>
+            <input type="hidden" id="category" name="category" value="{{ event['category'] if event else '' }}">
+        </div>
+        
+        <div class="form-group">
+            <label for="notes">备注</label>
+            <textarea id="notes" name="notes">{{ event['notes'] if event else '' }}</textarea>
+        </div>
+        
+        <div class="footer">
+            <button type="submit" class="save-btn">✓ 保存</button>
+        </div>
+    </form>
+    
+    <script>
+        // 修改点2：页面加载时初始化分类选择和全天事件状态
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化分类选择
+            const categoryBtns = document.querySelectorAll('.category-btn');
+            const categoryInput = document.getElementById('category');
+            
+            categoryBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    categoryBtns.forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                    categoryInput.value = btn.dataset.value;
+                });
+                
+                // 设置默认选中状态
+                if (btn.dataset.value === categoryInput.value) {
+                    btn.click();
+                }
+            });
+
+            // 初始化全天事件
+            const isAllDay = document.getElementById('is_all_day');
+            const endTime = document.getElementById('end_time');
+            
+            isAllDay.addEventListener('change', () => {
+                endTime.disabled = isAllDay.checked;
+                if (isAllDay.checked) {
+                    endTime.value = '';
+                }
+            });
+
+            // 设置默认开始时间（仅创建新日程时）
+            {% if not event %}
+            const now = new Date();
+            const timezoneOffset = now.getTimezoneOffset() * 60000;
+            const localISOTime = (new Date(now - timezoneOffset)).toISOString().slice(0, 16);
+            document.getElementById('start_time').value = localISOTime;
+            {% endif %}
+        });
+    </script>
+</body>
+</html>
