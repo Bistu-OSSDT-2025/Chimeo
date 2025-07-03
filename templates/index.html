@@ -1,51 +1,10 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>我的日程</title>
-    <style>
-        body { font-family: Arial, max-width: 800px, margin: 0 auto, padding: 20px }
-        .header { display: flex; justify-content: space-between; align-items: center }
-        .create-btn {
-            font-size: 24px; width: 40px; height: 40px;
-            border-radius: 50%; background: #4CAF50;
-            color: white; border: none; cursor: pointer
-        }
-        .event {
-            padding: 10px; margin-bottom: 10px;
-            border-radius: 5px; border-left: 5px solid
-        }
-        .work { border-color: #FF5722; background: #FFE0B2 }
-        .study { border-color: #2196F3; background: #BBDEFB }
-        .life { border-color: #4CAF50; background: #C8E6C9 }
-        .other { border-color: #9C27B0; background: #E1BEE7 }
-        .event-actions { margin-top: 10px; display: flex; gap: 5px }
-        .event-actions button {
-            padding: 3px 8px; font-size: 0.8em;
-            background: #f0f0f0; border: 1px solid #ddd
-        }
-        .action-buttons {
-            margin-top: 20px;
-            display: flex;
-            gap: 10px;
-        }
-        .action-buttons a {
-            padding: 8px 15px;
-            background: #4CAF50;
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
-        }
-        .action-buttons a:hover {
-            background: #45a049;
-        }
-    </style>
-</head>
-<body>
-    <div class="header">
+{% extends "base.html" %}
+{% block title %}我的日程{% endblock %}
+{% block content %}
+    <div class="header" style="display: flex; justify-content: space-between; align-items: center;">
         <h1>我的日程</h1>
         <button class="create-btn" onclick="window.location.href='{{ url_for('create_event') }}'">+</button>
     </div>
-    
     <div class="event-list">
         {% for event in events %}
         <div class="event {{ event['category'] or 'other' }}">
@@ -56,23 +15,55 @@
                 {% if event['is_all_day'] %} (全天){% endif %}
             </div>
             {% if event['notes'] %}<div>{{ event['notes'] }}</div>{% endif %}
-            
             <div class="event-actions">
                 <button onclick="window.location.href='{{ url_for('edit_event', event_id=event['id']) }}'">编辑</button>
-                <button onclick="if(confirm('确定删除？')){ fetch('{{ url_for('delete_event', event_id=event['id']) }}', {method:'POST'}).then(()=>window.location.reload()) }">
-                    删除
-                </button>
+                <button onclick="if(confirm('确定删除？')){ fetch('{{ url_for('delete_event', event_id=event['id']) }}', {method:'POST'}).then(()=>window.location.reload()) }">删除</button>
             </div>
         </div>
         {% else %}
         <p>暂无日程，点击右上角 + 创建</p>
         {% endfor %}
     </div>
-
-    <!-- 统一的操作按钮区域 -->
-    <div class="action-buttons">
-        <a href="{{ url_for('export_ics') }}">导出ICS日历</a>
-        <a href="/logout">退出登录</a>
-    </div>
-</body>
-</html>
+    <style>
+        .header h1 { margin: 0; }
+        .create-btn {
+            font-size: 24px; width: 40px; height: 40px;
+            border-radius: 50%; background: linear-gradient(135deg, #4CAF50 60%, #2196F3 100%);
+            color: white; border: none; cursor: pointer;
+            box-shadow: 0 2px 8px rgba(33,150,243,0.10);
+            transition: background 0.3s, transform 0.2s;
+        }
+        .create-btn:hover {
+            background: linear-gradient(135deg, #2196F3 60%, #4CAF50 100%);
+            transform: scale(1.1) rotate(10deg);
+        }
+        .event-list { margin-top: 30px; }
+        .event {
+            padding: 16px; margin-bottom: 18px;
+            border-radius: 10px; border-left: 6px solid;
+            box-shadow: 0 2px 12px rgba(60,60,60,0.06);
+            background: #f9fafd;
+            transition: box-shadow 0.3s, transform 0.2s;
+        }
+        .event:hover {
+            box-shadow: 0 8px 24px rgba(33,150,243,0.13);
+            transform: translateY(-2px) scale(1.02);
+        }
+        .work { border-color: #FF5722; background: #FFE0B2; }
+        .study { border-color: #2196F3; background: #BBDEFB; }
+        .life { border-color: #4CAF50; background: #C8E6C9; }
+        .other { border-color: #9C27B0; background: #E1BEE7; }
+        .event-title { font-size: 1.2em; font-weight: bold; margin-bottom: 6px; }
+        .event-time { color: #666; font-size: 0.98em; margin-bottom: 4px; }
+        .event-actions { margin-top: 10px; display: flex; gap: 8px; }
+        .event-actions button {
+            padding: 4px 12px; font-size: 0.95em;
+            background: #f0f0f0; border: 1px solid #ddd;
+            border-radius: 4px; cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+        }
+        .event-actions button:hover {
+            background: #2196F3; color: #fff; border-color: #2196F3;
+        }
+    </style>
+{% endblock %}

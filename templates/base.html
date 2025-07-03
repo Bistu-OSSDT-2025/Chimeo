@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}日程管理系统{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Roboto', Arial, sans-serif;
+            background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
+            transition: background 0.5s;
+        }
+        .navbar {
+            background: linear-gradient(90deg, #4CAF50 0%, #2196F3 100%);
+            color: white;
+            padding: 0 30px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 8px rgba(60,60,60,0.08);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            animation: slideDown 0.7s cubic-bezier(.68,-0.55,.27,1.55);
+        }
+        @keyframes slideDown {
+            from { transform: translateY(-60px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .navbar .nav-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .navbar .nav-links {
+            display: flex;
+            gap: 18px;
+        }
+        .navbar .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-size: 1em;
+            padding: 8px 16px;
+            border-radius: 20px;
+            transition: background 0.3s, transform 0.2s;
+            position: relative;
+        }
+        .navbar .nav-links a:hover {
+            background: rgba(255,255,255,0.18);
+            transform: translateY(-2px) scale(1.07);
+            box-shadow: 0 4px 12px rgba(33,150,243,0.10);
+        }
+        .container {
+            max-width: 900px;
+            margin: 40px auto 0 auto;
+            background: rgba(255,255,255,0.95);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(60,60,60,0.10);
+            padding: 32px 24px 24px 24px;
+            animation: fadeIn 0.8s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <div class="navbar">
+        <div class="nav-title">日程管理</div>
+        <div class="nav-links">
+            <a href="{{ url_for('index') }}">首页</a>
+            <a href="{{ url_for('create_event') }}">新建日程</a>
+            <a href="{{ url_for('export_ics') }}">导出ICS</a>
+            <a href="{{ url_for('task_splitter') }}">任务拆分</a>
+            <a href="/logout">退出登录</a>
+        </div>
+    </div>
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>

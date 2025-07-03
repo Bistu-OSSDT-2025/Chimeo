@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file
+from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file, jsonify
 import sqlite3
 import os
 from datetime import datetime
@@ -7,11 +7,77 @@ from io import BytesIO
 import threading
 import time
 from mail_sender import send_email
+import openai
+from dotenv import load_dotenv
+from typing import List, Optional
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24).hex()
 app.config['DATABASE'] = 'users.db'
 app.config['SESSION_COOKIE_SECURE'] = False
+
+# 加载环境变量
+load_dotenv()
+
+class TaskSplitter:
+    def __init__(self):
+        self.client = openai.OpenAI(
+            base_url=os.getenv("OPENAI_BASE_URL"),
+            api_key=os.getenv("OPENAI_API_KEY")
+        )
+        self.model_id = os.getenv("OPENAI_MODEL_ID", "deepseek32b")
+    
+    def split_task(self, task_description: str, language: str = "zh-CN") -> Optional[List[str]]:
+        try:
+            prompt = self._build_prompt(task_description, language)
+            
+            response = self.client.chat.completions.create(
+                model=self.model_id,
+                messages=[
+                    {"role": "system", "content": "你是一个高效的任务规划助手。"},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.7,
+                max_tokens=1000
+            )
+            
+            steps = self._parse_response(response.choices[0].message.content)
+            return steps
+            
+        except Exception as e:
+            print(f"Error splitting task: {e}")
+            return None
+    
+    def _build_prompt(self, task_description: str, language: str) -> str:
+        if language.startswith("zh"):
+            return (
+                f"请将以下任务拆分为具体的执行步骤，步骤数量在3-8个之间，每个步骤应简洁明了。"
+                f"直接输出步骤内容，不要添加任何解释或额外信息。"
+                f"任务描述：{task_description}\n\n"
+                f"步骤："
+            )
+        else:
+            return (
+                f"Please break down the following task into specific steps, with 3-8 steps in total. "
+                f"Each step should be concise and clear. "
+                f"Output only the step contents, without any explanations or additional information. "
+                f"Task description: {task_description}\n\n"
+                f"Steps:"
+            )
+    
+    def _parse_response(self, response_text: str) -> List[str]:
+        lines = [line.strip() for line in response_text.split('\n') if line.strip()]
+        steps = []
+        for line in lines:
+            if line.startswith(("1.", "2.", "3.", "4.", "5.", "6.", "7.", "8.", 
+                               "1、", "2、", "3、", "4、", "5、", "6、", "7、", "8、",
+                               "- ", "* ")):
+                line = line[2:].strip()
+            steps.append(line)
+        return steps
+
+# 初始化任务拆分器
+splitter = TaskSplitter()
 
 def init_db():
     with sqlite3.connect(app.config['DATABASE']) as conn:
@@ -275,7 +341,7 @@ def export_ics():
             ical_event = Event()
             ical_event.add('summary', event['title'])
             
-            # 处理时间格式
+            # 处理时间
             start_time_str = event['start_time']
             try:
                 if 'T' in start_time_str:
@@ -292,8 +358,13 @@ def export_ics():
                         end_time = datetime.strptime(end_time_str, '%Y-%m-%d %H:%M:%S')
                     ical_event.add('dtend', end_time)
                 
+                # 添加备注（可选）
                 if event['notes']:
                     ical_event.add('description', event['notes'])
+                
+                # ✅ 关键修复：添加分类标签
+                if event['category']:
+                    ical_event.add('categories', event['category'])  # 写入 CATEGORIES 字段
                 
                 cal.add_component(ical_event)
             except ValueError as e:
@@ -328,7 +399,27 @@ def import_ics():
             
         if file and file.filename.endswith('.ics'):
             try:
-                cal = Calendar.from_ical(file.read())
+                file.seek(0)
+                ics_content = file.read()
+                
+                if not ics_content:
+                    flash('文件内容为空')
+                    return redirect(request.url)
+                
+                try:
+                    ics_content = ics_content.decode('utf-8')
+                except UnicodeDecodeError:
+                    try:
+                        ics_content = ics_content.decode('gbk')
+                    except:
+                        flash('文件编码不支持')
+                        return redirect(request.url)
+                
+                cal = Calendar.from_ical(ics_content)
+                if not cal:
+                    flash('无效的日历文件')
+                    return redirect(request.url)
+                
                 user_id = get_user_id(session['username'])
                 imported_count = 0
                 
@@ -336,6 +427,36 @@ def import_ics():
                     cursor = conn.cursor()
                     for component in cal.walk():
                         if component.name == 'VEVENT':
+                            # 获取分类
+                            ical_categories = component.get('categories')
+                            category = 'other'  # 默认值
+                            
+                            if ical_categories:
+                                try:
+                                    # 处理分类数据 - 关键修复点
+                                    if hasattr(ical_categories, 'cats'):  # 处理vCategory对象
+                                        categories = ical_categories.cats
+                                    elif isinstance(ical_categories, list):
+                                        categories = [str(cat) for cat in ical_categories]
+                                    else:
+                                        categories = str(ical_categories).split(',')
+                                    
+                                    # 获取第一个分类并清理
+                                    if categories:
+                                        first_category = categories[0].strip().lower()
+                                        # 直接使用小写分类名，确保与前端样式匹配
+                                        category = first_category if first_category in ['work', 'study', 'life', 'other'] else 'other'
+                                except Exception as e:
+                                    print(f"分类处理错误: {e}")
+                                    category = 'other'
+                            
+                            # 处理时间和其他字段...
+                            dtstart = component.get('dtstart').dt
+                            start_time = dtstart.strftime('%Y-%m-%d %H:%M:%S')
+                            
+                            dtend = component.get('dtend')
+                            end_time = dtend.dt.strftime('%Y-%m-%d %H:%M:%S') if dtend else None
+                            
                             cursor.execute('''
                                 INSERT INTO events VALUES (
                                     NULL, ?, ?, ?, ?, ?, ?, ?, ?, 0
@@ -343,9 +464,11 @@ def import_ics():
                             ''', (
                                 user_id,
                                 str(component.get('summary')),
-                                component.get('dtstart').dt.strftime('%Y-%m-%d %H:%M:%S'),
-                                component.get('dtend').dt.strftime('%Y-%m-%d %H:%M:%S') if component.get('dtend') else None,
-                                0, '', 'other',
+                                start_time,
+                                end_time,
+                                0,  # is_all_day
+                                '',  # repeat_rule
+                                category,
                                 str(component.get('description')) if component.get('description') else None
                             ))
                             imported_count += 1
@@ -353,7 +476,8 @@ def import_ics():
                 flash(f'成功导入 {imported_count} 个日程')
                 return redirect(url_for('index'))
             except Exception as e:
-                flash(f'导入失败: {str(e)}')
+                print(f"导入错误详情: {str(e)}")
+                flash(f"导入失败: {str(e)}")
         else:
             flash('仅支持.ics文件')
     return render_template('import_ics.html')
@@ -392,7 +516,74 @@ def check_reminders():
         
         time.sleep(60)  # 每分钟检查一次
 
-# 启动应用
+
+# 在app.py中添加以下路由
+@app.route('/save_subtasks', methods=['POST'])
+def save_subtasks():
+    if 'username' not in session:
+        return jsonify({"error": "请先登录"}), 401
+    
+    data = request.json
+    main_task = data.get('main_task')
+    steps = data.get('steps')
+    
+    if not main_task or not steps:
+        return jsonify({"error": "缺少必要参数"}), 400
+    
+    try:
+        user_id = get_user_id(session['username'])
+        with get_db() as conn:
+            cursor = conn.cursor()
+            
+            # 为每个子步骤创建日程
+            for i, step in enumerate(steps):
+                cursor.execute('''
+                    INSERT INTO events VALUES (
+                        NULL, ?, ?, ?, ?, ?, ?, ?, ?, 0
+                    )
+                ''', (
+                    user_id,
+                    f"{main_task} - 步骤{i+1}: {step}",
+                    datetime.now().strftime('%Y-%m-%d %H:%M:%S'),  # 默认开始时间为现在
+                    '',  # 无结束时间
+                    0,   # 非全天
+                    '',  # 无重复规则
+                    'work',  # 默认分类为工作
+                    f"主任务: {main_task}\n步骤内容: {step}",  # 备注
+                ))
+            
+            conn.commit()
+        return jsonify({"success": True, "redirect": url_for('index')})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route('/api/split-task', methods=['POST'])
+def api_split_task():
+    if 'username' not in session:
+        return jsonify({"error": "请先登录"}), 401
+    
+    data = request.json
+    task = data.get('task')
+    language = data.get('language', 'zh-CN')
+    
+    if not task:
+        return jsonify({"error": "任务描述不能为空"}), 400
+    
+    steps = splitter.split_task(task, language)
+    
+    if steps:
+        return jsonify({"success": True, "steps": steps})
+    else:
+        return jsonify({"success": False, "error": "任务拆分失败"}), 500
+
+# 新增任务拆分页面路由
+@app.route('/task_splitter')
+def task_splitter():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    return render_template('task_splitter.html')
+
 if __name__ == '__main__':
     init_db()
     update_db()
