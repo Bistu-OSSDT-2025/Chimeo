@@ -1,35 +1,68 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>导入ICS文件</title>
-    <style>
-        body { font-family: Arial, max-width: 500px, margin: 0 auto, padding: 20px }
-        .header { display: flex; justify-content: space-between; align-items: center }
-        .import-form { margin-top: 20px }
-        .back-btn { margin-top: 20px }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h2>导入日历文件</h2>
-        <span class="close-btn" onclick="location.href='/'">×</span>
+{% extends "base.html" %}
+{% block title %}导入ICS文件{% endblock %}
+{% block content %}
+    <div class="header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <h2 style="margin:0;">导入日历文件</h2>
+        <span class="close-btn" onclick="location.href='/'" style="font-size: 28px; cursor: pointer;">×</span>
     </div>
-    
     {% with messages = get_flashed_messages() %}
         {% if messages %}
-            <div class="alert" style="color:red; margin:10px 0">
+            <div class="alert" style="color:red; margin:10px 0; text-align:center;">
                 {{ messages[0] }}
             </div>
         {% endif %}
     {% endwith %}
-    
     <form class="import-form" method="POST" enctype="multipart/form-data">
-        <input type="file" name="ics_file" accept=".ics" required>
-        <button type="submit" style="margin-top:10px">导入</button>
+        <input type="file" name="ics_file" accept=".ics" required style="margin-bottom: 16px;">
+        <button type="submit" class="import-btn">导入</button>
     </form>
-    
     <div class="back-btn">
-        <button onclick="location.href='/'">返回</button>
+        <button onclick="location.href='/'" class="back-btn-inner">返回</button>
     </div>
-</body>
-</html>
+    <style>
+        .import-form {
+            max-width: 350px;
+            margin: 0 auto 18px auto;
+            background: rgba(255,255,255,0.92);
+            border-radius: 12px;
+            box-shadow: 0 4px 18px rgba(33,150,243,0.08);
+            padding: 32px 24px 18px 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .import-btn {
+            background: linear-gradient(90deg, #4CAF50 0%, #2196F3 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 30px;
+            font-size: 1.1em;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.3s, transform 0.2s;
+        }
+        .import-btn:hover {
+            background: linear-gradient(90deg, #2196F3 0%, #4CAF50 100%);
+            transform: scale(1.04);
+        }
+        .back-btn {
+            text-align: center;
+        }
+        .back-btn-inner {
+            background: #e3f2fd;
+            color: #2196F3;
+            border: none;
+            border-radius: 5px;
+            padding: 8px 24px;
+            font-size: 1em;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.3s, color 0.2s;
+        }
+        .back-btn-inner:hover {
+            background: #2196F3;
+            color: #fff;
+        }
+    </style>
+{% endblock %}

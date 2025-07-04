@@ -1,56 +1,63 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>创建日程</title>
+{% extends "base.html" %}
+{% block title %}创建日程{% endblock %}
+{% block content %}
+    <div class="header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <h2 style="margin:0;">创建日程</h2>
+        <span class="close-btn" onclick="location.href='/'" style="font-size: 28px; cursor: pointer;">×</span>
+    </div>
+    <div class="option-btns">
+        <button class="option-btn" id="textInputBtn">文字输入</button>
+        <button class="option-btn" disabled>语音输入(开发中)</button>
+        <button class="option-btn" onclick="location.href='{{ url_for('import_ics') }}'">导入日历文件ICS</button>
+        <button class="option-btn" onclick="location.href='{{ url_for('task_splitter') }}'">智能任务拆分</button>
+    </div>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 500px;
+        .option-btns {
+            max-width: 400px;
             margin: 0 auto;
-            padding: 20px;
-        }
-        .header {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        .close-btn {
-            font-size: 24px;
-            cursor: pointer;
+            flex-direction: column;
+            gap: 18px;
         }
         .option-btn {
-            display: block;
-            width: 100%;
-            padding: 15px;
-            margin-bottom: 10px;
-            background-color: #f0f0f0;
+            font-size: 1.1em;
+            padding: 18px 0;
+            background: linear-gradient(90deg, #4CAF50 0%, #2196F3 100%);
+            color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 10px;
             cursor: pointer;
-            text-align: center;
+            box-shadow: 0 2px 12px rgba(33,150,243,0.10);
+            transition: background 0.3s, transform 0.2s, box-shadow 0.2s;
+            outline: none;
+            font-weight: bold;
+            letter-spacing: 1px;
         }
-        .option-btn:hover {
-            background-color: #e0e0e0;
+        .option-btn:disabled {
+            background: #b0bec5;
+            color: #fff;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .option-btn:not(:disabled):hover {
+            background: linear-gradient(90deg, #2196F3 0%, #4CAF50 100%);
+            transform: scale(1.04) translateY(-2px);
+            box-shadow: 0 6px 24px rgba(33,150,243,0.13);
+        }
+        .close-btn {
+            font-size: 28px;
+            cursor: pointer;
+            color: #2196F3;
+            transition: color 0.2s, transform 0.2s;
+        }
+        .close-btn:hover {
+            color: #4CAF50;
+            transform: scale(1.2) rotate(10deg);
         }
     </style>
-</head>
-<body>
-    <div class="header">
-        <h2>创建日程</h2>
-        <span class="close-btn" onclick="location.href='/'">×</span>
-    </div>
-    
-    <button class="option-btn" id="textInputBtn">文字输入</button>
-
-<script>
-document.getElementById('textInputBtn').addEventListener('click', function() {
-    window.location.href = "{{ url_for('text_input') }}";
-});
-</script>
-    <button class="option-btn" disabled>语音输入(开发中)</button>
-    <button class="option-btn" onclick="location.href='{{ url_for('import_ics') }}'">
-    导入日历文件ICS
-</button>
-</body>
-</html>
+    <script>
+        document.getElementById('textInputBtn').addEventListener('click', function() {
+            window.location.href = "{{ url_for('text_input') }}";
+        });
+    </script>
+{% endblock %}

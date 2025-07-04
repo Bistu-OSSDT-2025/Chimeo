@@ -1,31 +1,7 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>登录系统</title>
-    <style>
-        body { font-family: Arial, max-width: 400px, margin: 0 auto, padding: 20px }
-        .alert { color: red; margin: 10px 0 }
-        .form-group { margin-bottom: 15px }
-        label { display: block; margin-bottom: 5px }
-        input[type="text"],
-        input[type="password"],
-        input[type="email"] {
-            width: 100%; padding: 8px; box-sizing: border-box
-        }
-        button {
-            background: #4CAF50; color: white; 
-            padding: 10px 15px; border: none; 
-            width: 100%; cursor: pointer
-        }
-        #new-user-fields {
-            display: none; margin-top: 15px; 
-            padding: 15px; background: #f9f9f9
-        }
-    </style>
-</head>
-<body>
-    <h2>登录/注册</h2>
-    
+{% extends "base.html" %}
+{% block title %}登录系统{% endblock %}
+{% block content %}
+    <h2 style="text-align:center; margin-bottom: 24px;">登录/注册</h2>
     {% with messages = get_flashed_messages() %}
         {% if messages %}
             <div class="alert">
@@ -33,57 +9,81 @@
             </div>
         {% endif %}
     {% endwith %}
-
-    <!-- 修改表单部分 -->
-    <form action="/login" method="POST" onsubmit="return validateForm()">
-    <div class="form-group">
-        <label>用户名</label>
-        <input type="text" name="username" required>
-    </div>
-    
-    <div class="form-group">
-        <label>密码</label>
-        <input type="password" name="password" required>
-    </div>
-    
-    <div id="new-user-fields">
-        <h3>新用户注册</h3>
+    <form action="/login" method="POST" onsubmit="return validateForm()" class="login-form">
         <div class="form-group">
-            <label>邮箱</label>  <!-- 改为单个邮箱输入 -->
-            <input type="email" name="email">
+            <label>用户名</label>
+            <input type="text" name="username" required>
         </div>
-    </div>
-    
-    <button type="submit">提交</button>
-</form>
-    
-    <p>
+        <div class="form-group">
+            <label>密码</label>
+            <input type="password" name="password" required>
+        </div>
+        <div id="new-user-fields">
+            <h3>新用户注册</h3>
+            <div class="form-group">
+                <label>邮箱</label>
+                <input type="email" name="email">
+            </div>
+        </div>
+        <button type="submit">提交</button>
+    </form>
+    <p style="text-align:center; margin-top: 18px;">
         <a href="#" id="toggle-user-type">我是新用户</a>
     </p>
-
+    <style>
+        .login-form {
+            max-width: 350px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.85);
+            border-radius: 12px;
+            box-shadow: 0 4px 18px rgba(33,150,243,0.08);
+            padding: 32px 24px 18px 24px;
+        }
+        .form-group { margin-bottom: 18px; }
+        label { display: block; margin-bottom: 6px; font-weight: bold; }
+        input[type="text"], input[type="password"], input[type="email"] {
+            width: 100%; padding: 8px; box-sizing: border-box;
+            border: 1px solid #bcdff1; border-radius: 5px;
+            background: #f7fbfd;
+            transition: border 0.2s;
+        }
+        input:focus { border: 1.5px solid #2196F3; outline: none; }
+        button {
+            background: linear-gradient(90deg, #4CAF50 0%, #2196F3 100%);
+            color: white; padding: 10px 0; border: none;
+            width: 100%; border-radius: 5px; font-size: 1.1em;
+            cursor: pointer; margin-top: 10px;
+            transition: background 0.3s, transform 0.2s;
+        }
+        button:hover {
+            background: linear-gradient(90deg, #2196F3 0%, #4CAF50 100%);
+            transform: scale(1.04);
+        }
+        #new-user-fields {
+            display: none; margin-top: 15px;
+            padding: 15px; background: #f9f9f9; border-radius: 8px;
+        }
+        .alert { color: #e53935; margin: 10px 0; text-align: center; }
+    </style>
     <script>
-        // 切换新用户字段
         document.getElementById('toggle-user-type').addEventListener('click', (e) => {
             e.preventDefault();
             const fields = document.getElementById('new-user-fields');
             fields.style.display = fields.style.display === 'block' ? 'none' : 'block';
-            e.target.textContent = fields.style.display === 'block' 
-                ? '我是现有用户' 
+            e.target.textContent = fields.style.display === 'block'
+                ? '我是现有用户'
                 : '我是新用户';
         });
-
-        // 表单验证
         function validateForm() {
-    const isNewUser = document.getElementById('new-user-fields').style.display === 'block';
-    if (isNewUser) {
-        const email = document.getElementsByName('email')[0].value.trim();
-        if (!email) {
-            alert('新用户必须填写邮箱地址！');
-            return false;
+            const isNewUser = document.getElementById('new-user-fields').style.display === 'block';
+            if (isNewUser) {
+                const email = document.getElementsByName('email')[0].value.trim();
+                if (!email) {
+                    alert('新用户必须填写邮箱地址！');
+                    return false;
+                }
+            }
+            return true;
         }
-    }
-    return true;
-}
     </script>
-</body>
-</html>
+{% endblock %}
