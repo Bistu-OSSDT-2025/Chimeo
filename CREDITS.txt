@@ -1,5 +1,5 @@
-DigitalDaDie
-root0413
-samoye512
-Ora-W
-Cloaster
+DigitalDaDie 负责项目全栈开发，涵盖前端页面搭建、数据库设计搭建，登录及任务新增后端逻辑，对接后端接口对接。
+root0413 编写邮件提醒功能的代码，部分项目报告书写。
+samoye512 顾全可实现性实时沟通，java到py的转换，部分项目报告书书写，以及ppt编辑。
+Ora-W 前期尝试用java编写代码，项目基础功能实现后重点进行前端页面优化。
+Cloaster 网页功能设计，编写AI任务拆分功能的代码。
