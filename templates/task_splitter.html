@@ -83,88 +83,159 @@
             color: #4CAF50;
             transform: scale(1.2) rotate(10deg);
         }
+        .step-item {
+        padding: 10px;
+        margin-bottom: 5px;
+        background-color: #f1f8ff;
+        border-left: 4px solid #0d6efd;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+    }
+    .step-checkbox {
+        margin-right: 10px;
+    }
+    .step-text {
+        flex-grow: 1;
+    }
+    .select-all-container {
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+    }
+
+
+
     </style>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-    document.getElementById('splitBtn').addEventListener('click', async function() {
-        const taskInput = document.getElementById('taskInput').value.trim();
-        const englishOutput = document.getElementById('englishOutput').checked;
-        if (!taskInput) {
-            alert('请输入任务描述');
-            return;
-        }
-        document.getElementById('loading').style.display = 'block';
-        document.getElementById('resultContainer').style.display = 'none';
-        document.getElementById('saveBtn').style.display = 'none';
-        try {
-            const response = await fetch('/api/split-task', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    task: taskInput,
-                    language: englishOutput ? 'en-US' : 'zh-CN'
-                }),
-            });
-            const data = await response.json();
-            if (data.success) {
-                document.getElementById('originalTask').textContent = taskInput;
-                const stepsList = document.getElementById('stepsList');
-                stepsList.innerHTML = '';
-                data.steps.forEach((step, index) => {
-                    const stepElement = document.createElement('div');
-                    stepElement.className = 'step-item';
-                    stepElement.innerHTML = `<strong>${index + 1}.</strong> ${step}`;
-                    stepsList.appendChild(stepElement);
-                });
-                document.getElementById('resultContainer').style.display = 'block';
-                document.getElementById('saveBtn').style.display = 'block';
-            } else {
-                alert('任务拆分失败: ' + (data.error || '未知错误'));
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('splitBtn').addEventListener('click', async function() {
+            const taskInput = document.getElementById('taskInput').value.trim();
+            const englishOutput = document.getElementById('englishOutput').checked;
+            
+            if (!taskInput) {
+                alert('请输入任务描述');
+                return;
             }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('网络请求失败，请稍后再试');
-        } finally {
-            document.getElementById('loading').style.display = 'none';
-        }
-    });
-    document.getElementById('saveBtn').addEventListener('click', async function() {
-        const steps = Array.from(document.querySelectorAll('.step-item')).map(item => 
-            item.textContent.replace(/^\d+\.\s/, '')
-        );
-        const taskTitle = document.getElementById('originalTask').textContent;
-        document.getElementById('saveBtnText').style.display = 'none';
-        document.getElementById('saveBtnSpinner').style.display = 'inline-block';
-        document.getElementById('saveBtn').disabled = true;
-        try {
-            const response = await fetch('/save_subtasks', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    main_task: taskTitle,
-                    steps: steps
-                }),
+            
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('resultContainer').style.display = 'none';
+            document.getElementById('saveBtn').style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/split-task', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        task: taskInput,
+                        language: englishOutput ? 'en-US' : 'zh-CN'
+                    }),
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('originalTask').textContent = taskInput;
+                    const stepsList = document.getElementById('stepsList');
+                    stepsList.innerHTML = '';
+                    
+                    // 添加全选复选框
+                    const selectAllContainer = document.createElement('div');
+                    selectAllContainer.className = 'select-all-container';
+                    selectAllContainer.innerHTML = `
+                        <input type="checkbox" id="selectAll" class="step-checkbox" checked>
+                        <label for="selectAll" style="margin-left: 5px;">全选</label>
+                    `;
+                    stepsList.appendChild(selectAllContainer);
+                    
+                    // 添加步骤项
+                    data.steps.forEach((step, index) => {
+                        const stepElement = document.createElement('div');
+                        stepElement.className = 'step-item';
+                        stepElement.innerHTML = `
+                            <input type="checkbox" class="step-checkbox" id="step-${index}" checked>
+                            <div class="step-text"><strong>${index + 1}.</strong> ${step}</div>
+                        `;
+                        stepsList.appendChild(stepElement);
+                    });
+                    
+                    // 全选/取消全选功能
+                    document.getElementById('selectAll').addEventListener('change', function() {
+                        const checkboxes = document.querySelectorAll('.step-checkbox:not(#selectAll)');
+                        checkboxes.forEach(checkbox => {
+                            checkbox.checked = this.checked;
+                        });
+                    });
+                    
+                    document.getElementById('resultContainer').style.display = 'block';
+                    document.getElementById('saveBtn').style.display = 'block';
+                } else {
+                    alert('任务拆分失败: ' + (data.error || '未知错误'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('网络请求失败，请稍后再试');
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        });
+        
+        document.getElementById('saveBtn').addEventListener('click', async function() {
+            const stepItems = document.querySelectorAll('.step-item');
+            const steps = [];
+            const selectedIndices = [];
+            
+            stepItems.forEach((item, index) => {
+                const checkbox = item.querySelector('.step-checkbox');
+                const stepText = item.querySelector('.step-text').textContent.replace(/^\d+\.\s/, '');
+                steps.push(stepText);
+                if (checkbox.checked) {
+                    selectedIndices.push(index);
+                }
             });
-            const data = await response.json();
-            if (data.success) {
-                window.location.href = data.redirect;
-            } else {
-                alert('保存失败: ' + (data.error || '未知错误'));
+            
+            if (selectedIndices.length === 0) {
+                alert('请至少选择一个步骤保存');
+                return;
+            }
+            
+            const taskTitle = document.getElementById('originalTask').textContent;
+            document.getElementById('saveBtnText').style.display = 'none';
+            document.getElementById('saveBtnSpinner').style.display = 'inline-block';
+            document.getElementById('saveBtn').disabled = true;
+            
+            try {
+                const response = await fetch('/save_subtasks', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        main_task: taskTitle,
+                        steps: steps,
+                        selected_indices: selectedIndices
+                    }),
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    alert(`成功保存了 ${data.saved_count} 个子任务`);
+                    window.location.href = data.redirect;
+                } else {
+                    alert('保存失败: ' + (data.error || '未知错误'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('网络请求失败，请稍后再试');
+            } finally {
                 document.getElementById('saveBtnText').style.display = 'inline';
                 document.getElementById('saveBtnSpinner').style.display = 'none';
                 document.getElementById('saveBtn').disabled = false;
             }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('网络请求失败，请稍后再试');
-            document.getElementById('saveBtnText').style.display = 'inline';
-            document.getElementById('saveBtnSpinner').style.display = 'none';
-            document.getElementById('saveBtn').disabled = false;
-        }
+        });
     });
     </script>
 {% endblock %}

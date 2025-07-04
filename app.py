@@ -526,6 +526,7 @@ def save_subtasks():
     data = request.json
     main_task = data.get('main_task')
     steps = data.get('steps')
+    selected_indices = data.get('selected_indices', [])  # 新增：获取选中的步骤索引
     
     if not main_task or not steps:
         return jsonify({"error": "缺少必要参数"}), 400
@@ -535,25 +536,27 @@ def save_subtasks():
         with get_db() as conn:
             cursor = conn.cursor()
             
-            # 为每个子步骤创建日程
+            # 只保存选中的子步骤
             for i, step in enumerate(steps):
-                cursor.execute('''
-                    INSERT INTO events VALUES (
-                        NULL, ?, ?, ?, ?, ?, ?, ?, ?, 0
-                    )
-                ''', (
-                    user_id,
-                    f"{main_task} - 步骤{i+1}: {step}",
-                    datetime.now().strftime('%Y-%m-%d %H:%M:%S'),  # 默认开始时间为现在
-                    '',  # 无结束时间
-                    0,   # 非全天
-                    '',  # 无重复规则
-                    'work',  # 默认分类为工作
-                    f"主任务: {main_task}\n步骤内容: {step}",  # 备注
-                ))
+                if i in selected_indices:  # 只处理选中的步骤
+                    cursor.execute('''
+                        INSERT INTO events VALUES (
+                            NULL, ?, ?, ?, ?, ?, ?, ?, ?, 0
+                        )
+                    ''', (
+                        user_id,
+                        f"{main_task} - 步骤{i+1}: {step}",
+                        datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                        '', 0, '', 'work', 
+                        f"主任务: {main_task}\n步骤内容: {step}",
+                    ))
             
             conn.commit()
-        return jsonify({"success": True, "redirect": url_for('index')})
+        return jsonify({
+            "success": True, 
+            "redirect": url_for('index'),
+            "saved_count": len(selected_indices)  # 返回保存的数量
+        })
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
