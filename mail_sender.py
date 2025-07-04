@@ -2,6 +2,11 @@ import smtplib
 from email.mime.text import MIMEText
 from email.header import Header
 
+
+# - `smtplib`：Python内置的SMTP协议库，用于连接邮件服务器并发送邮件。
+# - `email.mime.text.MIMEText`：用于创建纯文本邮件内容。
+# - `email.header.Header`：用于设置邮件的头部信息（如发件人、收件人、主题）。
+
 def send_email(subject, content, to_email):
     from_email = '1827764696@qq.com'  # ⚠️ 替换为你的QQ邮箱
     password = 'yiydllkqbndceefa'           # ⚠️ 替换为你开启SMTP服务后获得的授权码
