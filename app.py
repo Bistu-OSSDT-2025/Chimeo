@@ -1,11 +1,12 @@
+# 导入了Flask框架相关模块
 from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file, jsonify
-import sqlite3
+import sqlite3# 数据库操作模块
 import os
-from datetime import datetime
-from icalendar import Calendar, Event
+from datetime import datetime# 时间处理模块
+from icalendar import Calendar, Event# iCalendar处理模块等
 from io import BytesIO
 import threading
-import time
+import time# 用于构建Web应用和实现各种功能。
 from mail_sender import send_email
 import openai
 from dotenv import load_dotenv
